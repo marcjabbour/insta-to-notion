@@ -1,0 +1,479 @@
+{
+  "name": "Instagram to Notion Knowledge Vault",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ig-ingest",
+        "options": {}
+      },
+      "id": "6ddb0074-16c5-4199-960f-a97a0197a13f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        112
+      ],
+      "webhookId": "ad2720bb-2066-4b9f-826a-772edc68dfab"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "url",
+              "value": "={{$json[\"body\"][\"url\"]}}"
+            },
+            {
+              "name": "note",
+              "value": "={{$json[\"body\"][\"note\"]}}"
+            },
+            {
+              "name": "saved_at",
+              "value": "={{$now.toUTC().toISO()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "751c3c0b-d063-400d-90cc-19e4f173a22f",
+      "name": "Normalize Inputs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2b6a604f-b9cf-809d-86a9-ded944503fcc",
+          "mode": "list",
+          "cachedResultName": "2b6a604f-b9cf-809d-86a9-ded944503fcc",
+          "cachedResultUrl": "https://www.notion.so/2b6a604fb9cf809d86a9ded944503fcc"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Category|select",
+              "selectValue": "={{$json[\"Category\"]}}"
+            },
+            {
+              "key": "Name|title",
+              "title": "={{$json[\"Title\"]}}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{$json[\"Summary\"]}}"
+            },
+            {
+              "key": "Takeaways|rich_text",
+              "textContent": "={{ $json[\"Takeaways\"].map(t => \"• \" + t).join(\"\\n\") }}"
+            },
+            {
+              "key": "Subcategory|rich_text",
+              "textContent": "={{$json[\"Subcategory\"]}}"
+            },
+            {
+              "key": "URL|url",
+              "urlValue": "={{$node[\"Normalize Inputs\"].json[\"url\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        112
+      ],
+      "id": "7b0a5a39-a4fc-4c19-981f-ba05f45efad1",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "5oDzGI3pkAHVbAlp",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extract the nested text object from the OpenAI node output\nconst content = $json.output?.[0]?.content?.[0]?.text;\n\nif (!content) {\n  throw new Error(\"No LLM output found at output[0].content[0].text\");\n}\n\n// Return that as the new JSON\nreturn {\n    json: JSON.parse(content)\n  }\n;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -240
+      ],
+      "id": "52cee2ed-3915-4a2e-a98b-95b85bd4988a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "command": "=/Users/marcjabbour/Desktop/notion-knowledge-vault/insta-extractor/venv/bin/python3 /Users/marcjabbour/Desktop/notion-knowledge-vault/insta-extractor/download_instagram_post.py {{$json[\"postId\"]}}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -208
+      ],
+      "id": "80a97e72-ea78-4292-a9ed-4943ba77af69",
+      "name": "Execute Command"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const url = $json.url;\n\nconst match = url.match(/instagram\\.com\\/p\\/([^/?#]+)/);\nconst id = match ? match[1] : null;\n\nreturn {\n  json: {\n    postId: id ? `-${id}` : null\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        -144
+      ],
+      "id": "00fd7213-9cbc-46c8-a547-ecb49d4106d9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The Execute Command node put the script's JSON into $json.stdout\nconst payload = JSON.parse($json.stdout);\n\n// Replace current item with that payload\nreturn { json: payload };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        -208
+      ],
+      "id": "c0a36968-1843-4efb-b378-e1f4049ceb8d",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{$json[\"out_dir\"]}}/*.jpg",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -208
+      ],
+      "id": "21fb8c61-da4c-4569-a875-6bbaa2424357",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "text": "=You are extracting text content from Instagram post slides.\nYour goal is to return clean, complete, and valid text from the image.\n\nInstructions:\n\t•\tExtract all readable text visible in the image.\n\t•\tPreserve line breaks where they reflect meaningful structure (paragraphs, quotes, lists).\n\t•\tIf any text is cut off, blurred, or unreadable, replace the missing part with [...].\n\t•\tRemove noise such as OCR artifacts, emojis that interfere with meaning, duplicate fragments, or watermarks.\n\t•\tEnsure the extracted text is human-readable and coherent.\n\t•\tEscape quotes and backslashes properly so the JSON is valid.\n\t•\tOutput must be strictly valid JSON.\n\nOutput Format:\n\n{\n  \"text\": \"<full extracted text here>\"\n}",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -64
+      ],
+      "id": "f5995147-4c91-4d00-b0c2-8d2e7ddfcd88",
+      "name": "Analyze image",
+      "executeOnce": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "wz4dFLFJAtwuF4cr",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input data from the previous node\nconst input = $input.all();\n\n// Flatten and extract text fields\nconst allText0 = input\n  .flat()\n  .map(i => i.json[0]?.content?.[0]?.text || \"\")\n  .map(t => {\n    try {\n      const jsonText = t.replace(/```json|```/g, \"\").trim();\n      const parsed = JSON.parse(jsonText);\n      return parsed.text || \"\";\n    } catch {\n      return t;\n    }\n  })\n  .join(\"\\n\\n\");\n\n// Return a single item with the combined text\nreturn [{ json: { combined_text: allText0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        144
+      ],
+      "id": "24def70d-738c-4b53-90c3-7efc9b3c5d21",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a precise text extractor, classifier, and summarizer.\n\nYou will receive messy content that may include:\n\t•\tMarkdown code fences (json ... ),\n\t•\tJSON objects with a \"text\" field,\n\t•\tOther noisy or partial text.\n\nYour job:\n\t1.\tExtract text\n\t•\tIf there is JSON, find the \"text\" field and extract its value.\n\t•\tIgnore surrounding JSON syntax, keys, and code fences.\n\t•\tRemove leading/trailing quotes and backslashes.\n\t•\tNormalize whitespace:\n\t•\tReplace multiple spaces with a single space.\n\t•\tPreserve meaningful line breaks and paragraphs when possible.\n\t•\tIf the text is clearly cut off mid-sentence, end it with [...].\n\t2.\tAnalyze and categorize\n\t•\tInfer a Category that describes the overall type of content (e.g., “AI Research”, “Self-Help”, “Business Strategy”, “Programming Tutorial”, etc.).\n\t•\tInfer a more specific Subcategory (e.g., “Transformers & Attention”, “Productivity Tips”, “Startup Fundraising”, “JavaScript Arrays”, etc.).\n\t•\tCreate a short, descriptive Title that could be used as a note title or page title.\n\t3.\tSummarize and extract takeaways\n\t•\tWrite a concise Summary (3–8 sentences) capturing:\n\t•\tThe main ideas.\n\t•\tAny key claims, arguments, or conclusions.\n\t•\tKeep the tone neutral and factual.\n\t•\tCreate a Takeaways list:\n\t•\t3–7 bullet-style items.\n\t•\tEach takeaway should be a clear, standalone insight or point.\n\t4.\tOutput format (VERY IMPORTANT)\n\t•\tReturn one single JSON object only.\n\t•\tNo explanations, no markdown, no code fences.\n\t•\tThe JSON must be valid and follow this exact shape:\n\n{\n  \"Category\": \"string\",\n  \"Subcategory\": \"string\",\n  \"Title\": \"string\",\n  \"Summary\": \"string\",\n  \"Takeaways\": [\n    \"string\",\n    \"string\",\n    \"string\"\n  ]\n}"
+            },
+            {
+              "content": "={{$json[\"combined_text\"]}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        448,
+        160
+      ],
+      "id": "8ebeb047-286c-4efb-a06e-821ab3354e7e",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "wz4dFLFJAtwuF4cr",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=rm -rf {{$node[\"Code in JavaScript2\"].json[\"out_dir\"]}}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -144
+      ],
+      "id": "966b6af1-fa97-459e-90db-2c7e898273e1",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        224
+      ],
+      "id": "837f7af2-0446-41ff-bb7e-0be8b3860dd8",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Extract the nested text object from the OpenAI node output\nconst content = $json.output?.[0]?.content?.[0]?.text;\n\nif (!content) {\n  throw new Error(\"No LLM output found at output[0].content[0].text\");\n}\n\n// Return that as the new JSON\nreturn {\n    json: { text: content }\n  }\n;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        224
+      ],
+      "id": "275c8745-96da-4f88-bda0-39bb5dd60793",
+      "name": "Code in JavaScript5"
+    }
+  ],
+  "pinData": {
+    "Normalize Inputs": [
+      {
+        "json": {
+          "url": "https://www.instagram.com/p/test123",
+          "note": "Example post about AI models and RAG.",
+          "saved_at": "2025-11-25T15:42:00.000Z"
+        }
+      }
+    ],
+    "Code in JavaScript4": [
+      {
+        "json": {
+          "output": [
+            {
+              "id": "msg_058669cf4163bb6e0069273e729dec8196b3cb5915ad9eb753",
+              "type": "message",
+              "status": "completed",
+              "content": [
+                {
+                  "type": "output_text",
+                  "annotations": [],
+                  "logprobs": [],
+                  "text": "{\n  \"summary\": \"Google Research has introduced a new AI model framework, addressing the issue of catastrophic forgetting in neural networks, a significant challenge in AI development. The announcement suggests a shift towards continuous learning, enabling AI to remember and evolve over time, akin to human cognition. The new framework features interconnected optimization systems with different speeds, allowing the model to handle memory in a layered manner, similar to human memory, including reflexes and long-term learning. The model, named Hope, reportedly outperforms current recurrent models by maintaining past knowledge while learning new tasks, avoiding common AI pitfalls. This development is positioned as a transformative step in AI evolution, proposing a new direction rather than simply scaling existing models. The concept of 'Nested Learning' promises an AI that is adaptive and capable of lifelong learning, mimicking human cognitive processes more closely.\"\n}"
+                }
+              ],
+              "role": "assistant"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Inputs": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "84211c5c-fd9b-490f-8bf5-47c3b338e618",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8994ce8d88b73a069e498e79e55a683a22e1541ccb67fc2d09df7dc17457e918"
+  },
+  "id": "ZOXJ4rSn6uPVAvNQ",
+  "tags": []
+}

@@ -1,0 +1,17 @@
+services:
+  n8n:
+    build: .
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
+      - N8N_ENCRYPTION_KEY=some-long-random-string
+    volumes:
+      # fresh local data folder JUST for docker-n8n
+      - ./data/n8n:/home/node/.n8n
+      # insta downloads
+      - ./data/insta:/data
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+# n8n docker data
+data/
+# macOS junk
+.DS_Store
+# node / editor junk
+node_modules/
+.vscode/
+.idea/
