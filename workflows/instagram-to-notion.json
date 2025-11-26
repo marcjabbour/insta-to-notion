@@ -118,7 +118,7 @@
     },
     {
       "parameters": {
-        "command": "=/Users/marcjabbour/Desktop/notion-knowledge-vault/insta-extractor/venv/bin/python3 /Users/marcjabbour/Desktop/notion-knowledge-vault/insta-extractor/download_instagram_post.py {{$json[\"postId\"]}}"
+        "command": "=python3 /scripts/insta-extractor.py {{$json[\"postId\"]}}"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
