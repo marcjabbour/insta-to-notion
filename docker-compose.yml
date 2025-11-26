@@ -9,6 +9,7 @@ services:
       - N8N_PROTOCOL=http
       - N8N_EDITOR_BASE_URL=http://localhost:5678
       - N8N_ENCRYPTION_KEY=some-long-random-string
+      - N8N_SECURE_MODE=false
     volumes:
       # fresh local data folder JUST for docker-n8n
       - ./data/n8n:/home/node/.n8n
