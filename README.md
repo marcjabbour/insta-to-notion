@@ -48,6 +48,44 @@ n8n-insta-app/
 
 ---
 
+## 🔧 Notion Setup (Prerequisite)
+
+Before running this workflow, you must already have a **Notion database** ready to receive entries.
+
+### 1. Create your Notion database
+
+Create a new Notion database (table view is fine) and include at least the following properties:
+
+| Property Name | Type | Purpose |
+|----------------|------|----------|
+| **Title** | Title | The post title or summary |
+| **Summary** | Text | AI-generated summary of the post |
+| **Takeaways** | Text | Key bullet points extracted by GPT |
+| **Category** | Select / Multi-select | Optional categorization or tags |
+| **URL** | URL | The original Instagram post URL |
+| **Note** | Text | Your optional user-supplied note |
+
+You can rename these later — just make sure the property names in your workflow’s **Notion “Create Page” node** match your database.
+
+### 2. Share the database with your Notion integration
+
+- In Notion, click **Share → Invite → [Your Integration Name]**
+- Select your integration and click **Invite**
+- Copy your **Database ID** from the database URL  
+  (It’s the 32-character string after `notion.so/` and before the `?`)
+
+Example:
+```
+https://www.notion.so/My-Knowledge-Vault-2b6a604fb9cf8079a5a1cde4669f2e3e
+```
+➡️ Database ID: `2b6a604fb9cf8079a5a1cde4669f2e3e`
+
+### 3. Paste your Database ID into the n8n workflow
+
+In the **“Create a database page”** node, replace the placeholder `databaseId` with your actual one.
+
+---
+
 ## ⚙️ Setup Instructions
 
 ### 1. Clone the repository
